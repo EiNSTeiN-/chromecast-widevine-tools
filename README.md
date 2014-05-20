@@ -1,4 +1,5 @@
-chromecast-widevine-tools
-=========================
 
-Some experimental tools that are meant to run on a rooted chromecast in order to interact with the widevine library (libwvcdm).
+Dependencies:
+```
+sudo apt-get install protobuf-compiler libprotobuf-dev libprotoc-dev
+```
