@@ -2,8 +2,7 @@ PREFIX=arm-linux-gnueabi
 LD=$(PREFIX)-ld
 CC=$(PREFIX)-gcc
 CXX=$(PREFIX)-g++
-AR=$(PREFIX)-ar
-AR=$(PREFIX)-ld
+AR="$(PREFIX)-ar r"
 RANLIB=$(PREFIX)-ranlib
 
 MOCKS=mocks/
@@ -106,14 +105,17 @@ chromium:
 
 .tools: bin/cert_provisioning
 
-.third_party: third_party/openssl
+.third_party: third_party/openssl/libssl.a
 
 third_party/openssl:
-	echo "Cross-compiling OpenSSL ..."
+	echo "Cloning OpenSSL ..."
 	git clone https://github.com/openssl/openssl.git third_party/openssl
-	(cd third_party/openssl && git checkout OpenSSL_1_0_1g)
-	(cd third_party/openssl && ./Configure linux-generic32 no-shared -DL_ENDIAN)
-	(cd third_party/openssl && make CC=$(CC) AR=$(AR) RANLIB=$(RANLIB) LD=$(LD) MAKEDEPPROG=$(CC) PROCESSOR=ARM)
+	cd third_party/openssl && git checkout OpenSSL_1_0_1g
+
+third_party/openssl/libssl.a: third_party/openssl
+	echo "Cross-compiling OpenSSL ..."
+	cd third_party/openssl && ./Configure linux-generic32 no-shared -DL_ENDIAN
+	make -C third_party/openssl CC=$(CC) AR=$(AR) RANLIB=$(RANLIB) LD=$(LD) MAKEDEPPROG=$(CC) PROCESSOR=ARM
 
 bin/cert_provisioning: $(MOCKS)PEAgent/libPEAgent.so $(CERT_PROVISIONING_OBJS)
 	mkdir -p bin/
@@ -135,4 +137,4 @@ $(MOCKS)PEAgent/libPEAgent.so: $(MOCKS)PEAgent/oecc.o
 clean:
 	rm -f $(MOCKS)PEAgent/*.so $(MOCKS)PEAgent/*.o
 	rm -f $(CERT_PROVISIONING_OBJS) bin/cert_provisioning
-
+	make -C third_party/openssl clean
