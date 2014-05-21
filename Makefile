@@ -100,7 +100,8 @@ CERT_PROVISIONING_OBJS=\
 all: chromium .third_party .tools
 
 chromium:
-	wget https://www.googledrive.com/host/0B3j4zj2IQp7MQkE3R2pzQ1c3Sk0/chromecast_v1.5_content_shell.tgz
+	echo "Downloading Chromecast 'content shell' open source files ..."
+	wget --continue https://www.googledrive.com/host/0B3j4zj2IQp7MQkE3R2pzQ1c3Sk0/chromecast_v1.5_content_shell.tgz
 	tar zxf chromecast_v1.5_content_shell.tgz
 
 .tools: bin/cert_provisioning
@@ -108,6 +109,7 @@ chromium:
 .third_party: third_party/openssl
 
 third_party/openssl:
+	echo "Cross-compiling OpenSSL ..."
 	git clone https://github.com/openssl/openssl.git third_party/openssl
 	(cd third_party/openssl && git checkout OpenSSL_1_0_1g)
 	(cd third_party/openssl && ./Configure linux-generic32 no-shared -DL_ENDIAN)
