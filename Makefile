@@ -3,6 +3,8 @@ LD=$(PREFIX)-ld
 CC=$(PREFIX)-gcc
 CXX=$(PREFIX)-g++
 AR=$(PREFIX)-ar
+AR=$(PREFIX)-ld
+RANLIB=$(PREFIX)-ranlib
 
 MOCKS=mocks/
 TOOLS=tools/
@@ -11,7 +13,7 @@ EUREKA_SRC=chromium/src/
 EUREKA_RELEASE=$(EUREKA_SRC)out_arm_eureka/Release/
 
 INCLUDES=-Iincludes/wvcdm/ -Iincludes/wvcdm_sysdep/ -I$(EUREKA_SRC) 
-LIBPATH=-L$(EUREKA_RELEASE) -L$(MOCKS)PEAgent 
+LIBPATH=-L$(EUREKA_RELEASE) -L$(MOCKS)PEAgent -Lthird_party/openssl
 
 CFLAGS=-Wall -Wextra -DNDEBUG -DEUREKA -DPOSIX -DLINUX \
 	-Wno-unused-parameter -Wno-missing-field-initializers
@@ -19,7 +21,7 @@ SHARED_CFLAGS=-fPIC -shared $(CFLAGS)
 
 CERT_PROVISIONING_LIBS=\
 	-lwvcdm -lwvcdm_sysdep -loec_eureka \
-	-lPEAgent -ldevice_files -llicense_protocol -lprotobuf_lite \
+	-lPEAgent -ldevice_files -llicense_protocol -lprotobuf_lite -lcrypto \
 	-lstdc++ -lc -lpthread 
 
 CERT_PROVISIONING_OBJS=\
@@ -99,19 +101,22 @@ all: chromium .third_party .tools
 
 chromium:
 	wget https://www.googledrive.com/host/0B3j4zj2IQp7MQkE3R2pzQ1c3Sk0/chromecast_v1.5_content_shell.tgz
-	tar zxf chromecast_v1.6_content_shell.tgz
+	tar zxf chromecast_v1.5_content_shell.tgz
 
-.tools: cert_provisioning
+.tools: bin/cert_provisioning
 
 .third_party: third_party/openssl
 
 third_party/openssl:
 	git clone https://github.com/openssl/openssl.git third_party/openssl
 	(cd third_party/openssl && git checkout OpenSSL_1_0_1g)
+	(cd third_party/openssl && ./Configure linux-generic32 no-shared -DL_ENDIAN)
+	(cd third_party/openssl && make CC=$(CC) AR=$(AR) RANLIB=$(RANLIB) LD=$(LD) MAKEDEPPROG=$(CC) PROCESSOR=ARM)
 
-cert_provisioning: $(MOCKS)PEAgent/libPEAgent.so $(CERT_PROVISIONING_OBJS)
+bin/cert_provisioning: $(MOCKS)PEAgent/libPEAgent.so $(CERT_PROVISIONING_OBJS)
+	mkdir -p bin/
 	$(CXX) $(CFLAGS) $(INCLUDES) $(LIBPATH) \
-		-o cert_provisioning $(CERT_PROVISIONING_OBJS) $(CERT_PROVISIONING_LIBS)
+		-o bin/cert_provisioning $(CERT_PROVISIONING_OBJS) $(CERT_PROVISIONING_LIBS)
 
 .c.o:
 	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
@@ -127,5 +132,5 @@ $(MOCKS)PEAgent/libPEAgent.so: $(MOCKS)PEAgent/oecc.o
 
 clean:
 	rm -f $(MOCKS)PEAgent/*.so $(MOCKS)PEAgent/*.o
-	rm -f $(CERT_PROVISIONING_OBJS) cert_provisioning
+	rm -f $(CERT_PROVISIONING_OBJS) bin/cert_provisioning
 
