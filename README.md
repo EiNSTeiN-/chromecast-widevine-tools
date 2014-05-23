@@ -25,6 +25,6 @@ make
 How to run tests
 ----------------
 ```bash
-sudo make lxc -C tests    # setup the lxc environment (only needed once; this will take a while).
-make -C tests             # run tests.
+sudo tests/lxc-bootstrap    # setup the lxc environment (only needed once; this will take a while).
+make tests                  # run tests.
 ```
