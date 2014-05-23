@@ -20,7 +20,9 @@
 *.out
 *.app
 
-/chromium
-/third_party/openssl
+chromium/
+third_party/openssl/
 chromecast_*_content_shell.tgz
 bin/
+lxc/
+staging/
