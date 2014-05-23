@@ -1,0 +1,120 @@
+#!/bin/bash
+
+LXCPATH=`sudo lxc-config lxc.lxcpath`
+LXCNAME="chromecast-widevine-tools-tests"
+
+CONTAINERPATH="$LXCPATH/$LXCNAME"
+LXC_ROOTFS="$CONTAINERPATH/rootfs"
+
+test -d $CONTAINERPATH || lxc-create -t ubuntu -n $LXCNAME -- -a armhf
+
+echo "Container: $CONTAINERPATH";
+
+if [ "`lxc-ls | grep $LXCNAME`" != "" ]; then
+  echo "Stopping container temporarily..."
+  lxc-stop -n $LXCNAME
+fi
+
+STAGING="`pwd`/staging"
+
+UPDATE_URL='https://tools.google.com/service/update2'
+UPDATE_DATA=$(cat<<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<o:gupdate xmlns:o="http://www.google.com/update2/request" version="GoogleTvEureka-0.1.0.0" updaterversion="GoogleTvEureka-0.1.0.0" protocol="2.0" ismachine="1">
+    <o:os version="3.0.8" platform="Linux" sp=""></o:os>
+    <o:app appid="{45ab3f62-be86-44be-9799-faa6a1229396}" version="12940" lang="en-US" track="stable-channel" board="eureka-b3"
+        hardware_class="">
+        <o:updatecheck targetversionprefix=""></o:updatecheck>
+    </o:app>
+</o:gupdate>
+EOF
+)
+
+if [ ! -d $STAGING ]; then
+  echo "Building test staging area...";
+  mkdir -p $STAGING
+  chmod 0777 $STAGING
+fi
+
+if [ ! -e $STAGING/current ]; then
+  echo "Downloading latest chromecast OTA...";
+
+  UPD_XML=`echo "$UPDATE_DATA" | curl -s $UPDATE_URL -d @- -H 'Content-type: text/xml'`
+
+  UPD_DISPLAYVERSION=`echo "$UPD_XML" | xmllint --xpath 'string(//@DisplayVersion)' -`
+  UPD_CODEBASE=`echo "$UPD_XML" | xmllint --xpath 'string(//@codebase)' -`
+  UPD_SIZE=`echo "$UPD_XML" | xmllint --xpath 'string(//@size)' -`
+  echo "Download version $UPD_DISPLAYVERSION from $UPD_CODEBASE"
+
+  UPD_CODEBASE_OUT=$STAGING/`basename $UPD_CODEBASE`
+
+  mkdir -p $STAGING
+  wget --continue $UPD_CODEBASE -O $UPD_CODEBASE_OUT
+
+  unzip $UPD_CODEBASE_OUT -d $STAGING/$UPD_DISPLAYVERSION
+  unsquashfs -d $STAGING/$UPD_DISPLAYVERSION-system $STAGING/$UPD_DISPLAYVERSION/system.img
+
+  CPIO_OFFSET=`binwalk $STAGING/$UPD_DISPLAYVERSION/boot.img | grep 'gzip compressed data' | cut -d' ' -f1`
+  dd if=$STAGING/$UPD_DISPLAYVERSION/boot.img bs=$CPIO_OFFSET skip=1 of=$STAGING/$UPD_DISPLAYVERSION/boot.cpio.gz
+  mkdir -p $STAGING/$UPD_DISPLAYVERSION-initramfs
+  cd $STAGING/$UPD_DISPLAYVERSION-initramfs && pax -rvzf $STAGING/$UPD_DISPLAYVERSION/boot.cpio.gz
+
+  echo $UPD_DISPLAYVERSION > $STAGING/current
+fi
+
+if [ ! -e $STAGING/current ]; then
+  echo "Something went wrong, cannot find local OTA filesystem."
+  exit 1;
+fi
+
+KEY=$STAGING/lxc-key
+if [ ! -e $KEY ]; then
+  echo "Generating RSA key for container ..."
+  ssh-keygen -t rsa -f $KEY -N ""
+  chmod 0774 $KEY
+fi
+
+STAGING_SYSTEM=$STAGING/`cat $STAGING/current`-system
+echo "Using OTA /system folder at: $STAGING_SYSTEM"
+STAGING_INITRAMFS=$STAGING/`cat $STAGING/current`-initramfs
+echo "Using OTA initramfs at: $STAGING_INITRAMFS"
+
+cp -r $STAGING_INITRAMFS/lib/* $LXC_ROOTFS/lib/
+
+umount $LXC_ROOTFS/system
+if [ "`mount | grep $STAGING_SYSTEM`" = "" ]; then
+  echo "Binding $STAGING_SYSTEM to $LXC_ROOTFS/system"
+
+  mkdir -p $LXC_ROOTFS/system
+  mount -o bind $STAGING_SYSTEM $LXC_ROOTFS/system
+fi
+
+mkdir -p $LXC_ROOTFS/root/.ssh/
+cp $KEY.pub $LXC_ROOTFS/root/.ssh/authorized_keys
+chown -R 0:0 $LXC_ROOTFS/root/.ssh/
+chmod 644 $LXC_ROOTFS/root/.ssh
+chmod 644 $LXC_ROOTFS/root/.ssh/authorized_keys
+
+echo "Booting container ..."
+lxc-start -n $LXCNAME -d
+lxc-wait -n $LXCNAME --state=RUNNING -t 30
+
+if [ "`lxc-ls $LXCNAME --fancy | tail -n1 | awk '{ print $2 }'`" != "RUNNING" ]; then
+  echo "Container failed to boot."
+  exit 1;
+fi
+
+echo "Waiting for container to get an IP address ..."
+while [ "`lxc-ls $LXCNAME --fancy | tail -n1 | awk '{ print $3 }'`" = "-" ]; do
+  sleep 1;
+done
+
+IP="`lxc-ls $LXCNAME --fancy | tail -n1 | awk '{ print $3 }'`"
+
+cat <<EOF
+
+--------
+Everything is setup. To use your LXC container, type:
+   ssh root@$IP -i staging/`basename $KEY`
+
+EOF
