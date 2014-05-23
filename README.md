@@ -13,7 +13,7 @@ Install test dependencies
 -------------------------
 ```bash
 apt-get install lxc qemu-system-arm qemu-user-static curl libxml2-utils \
-  squashfs-tools binwalk
+  squashfs-tools binwalk pax
 ```
 
 How to build
