@@ -26,3 +26,4 @@ chromecast_*_content_shell.tgz
 bin/
 lxc/
 staging/
+toolchain/
