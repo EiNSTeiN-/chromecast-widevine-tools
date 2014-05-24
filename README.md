@@ -6,7 +6,7 @@ Some experimental tools that are meant to run on a rooted chromecast in order to
 Install build dependencies
 --------------------------
 ```bash
-apt-get install gcc-arm-linux-gnueabi g++-arm-linux-gnueabi
+apt-get install git subversion
 ```
 
 Install test dependencies
