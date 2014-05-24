@@ -10,6 +10,7 @@ TOOLS ?= tools
 INCPATH ?= includes
 THIRD_PARTY ?= third_party
 OPENSSL ?= $(THIRD_PARTY)/openssl
+PROTOBUF ?= $(THIRD_PARTY)/protobuf
 OUTDIR ?= bin
 TOOLCHAIN ?= $(shell pwd)/toolchain
 TOOLCHAIN_BIN := $(TOOLCHAIN)/arm-unknown-linux-gnueabi-4.5.3-glibc/bin
@@ -20,6 +21,7 @@ EUREKA_SRC ?= chromium/src
 EUREKA_RELEASE := $(EUREKA_SRC)/out_arm_eureka/Release
 
 INCLUDES=-I$(INCPATH)/wvcdm/ -I$(INCPATH)/wvcdm_sysdep/ -I$(EUREKA_SRC) \
+	-I$(PROTOBUF)/src \
 	-I$(TOOLCHAIN)/arm-unknown-linux-gnueabi-4.5.3-glibc/target-arm-unknown-linux-gnueabi/usr/include
 LIBPATH=-L$(EUREKA_RELEASE) -L$(MOCKS)/PEAgent -L$(OPENSSL) \
 	-L$(TOOLCHAIN)/arm-unknown-linux-gnueabi-4.5.3-glibc/target-arm-unknown-linux-gnueabi/usr/lib
@@ -121,7 +123,10 @@ $(EUREKA_SRC):
 
 .tools: $(OUTDIR)/cert_provisioning
 
-.third_party: $(OPENSSL)/libssl.a
+.third_party: $(PROTOBUF) $(OPENSSL)/libssl.a
+
+$(PROTOBUF):
+	svn checkout http://protobuf.googlecode.com/svn/tags/2.5.0/ $(PROTOBUF)
 
 $(OPENSSL):
 	echo "Cloning OpenSSL ..."

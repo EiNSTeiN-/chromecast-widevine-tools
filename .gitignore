@@ -21,7 +21,7 @@
 *.app
 
 chromium/
-third_party/openssl/
+third_party/
 chromecast_*_content_shell.tgz
 bin/
 lxc/
