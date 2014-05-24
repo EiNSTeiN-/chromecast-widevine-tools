@@ -1,7 +1,10 @@
 
-ROOTFS ?= ../lxc
+STAGING ?= ../staging
 
-all: $(ROOTFS)
+LXCPATH ?= `sudo lxc-config lxc.lxcpath`
+LXCNAME ?= "chromecast-widevine-tools-tests"
 
-$(ROOTFS):
+all: $(STAGING)
+
+$(STAGING):
 	echo "Please run 'sudo tests/lxc-bootstrap' to setup lxc for tests."

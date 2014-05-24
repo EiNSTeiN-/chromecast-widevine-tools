@@ -89,6 +89,15 @@ if [ "`mount | grep $STAGING_SYSTEM`" = "" ]; then
   mount -o bind $STAGING_SYSTEM $LXC_ROOTFS/system
 fi
 
+umount $LXC_ROOTFS/root/tools
+OUTDIR=`pwd`/bin
+if [ "`mount | grep $OUTDIR`" = "" ]; then
+  echo "Binding $OUTDIR to $LXC_ROOTFS/root/tools"
+
+  mkdir -p $LXC_ROOTFS/root/tools
+  mount -o bind $OUTDIR $LXC_ROOTFS/root/tools
+fi
+
 mkdir -p $LXC_ROOTFS/root/.ssh/
 cp $KEY.pub $LXC_ROOTFS/root/.ssh/authorized_keys
 chown -R 0:0 $LXC_ROOTFS/root/.ssh/
@@ -115,6 +124,12 @@ cat <<EOF
 
 --------
 Everything is setup. To use your LXC container, type:
+
    ssh root@$IP -i staging/`basename $KEY`
+
+Some directories require to be mounted on the lxc filesystem,
+so you should run this scripts again if these directories are
+unmounted (by a reboot or otherwise).
+--------
 
 EOF
