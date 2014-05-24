@@ -90,7 +90,7 @@ if [ "`mount | grep $STAGING_SYSTEM`" = "" ]; then
 fi
 
 umount $LXC_ROOTFS/root/tools
-OUTDIR=`pwd`/bin
+OUTDIR="`pwd`/bin"
 if [ "`mount | grep $OUTDIR`" = "" ]; then
   echo "Binding $OUTDIR to $LXC_ROOTFS/root/tools"
 
