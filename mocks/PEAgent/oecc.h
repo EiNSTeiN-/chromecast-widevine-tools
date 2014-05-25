@@ -2,15 +2,18 @@
 #define EXPORT extern "C" __declspec (dllexport)
 
 /*
-  Open the session
+  Initialize the crypto module
   Called by CryptoSession::Init
 */
 EXPORT
-int _oecc01(int v1);
+int _oecc01(int a1);
 
-/* */
+/*
+  Un-initialize the crypto module
+  Called by CryptoSession::Terminate
+*/
 EXPORT
-int _oecc02(/* todo */);
+int _oecc02(int a1);
 
 /* */
 EXPORT
@@ -35,7 +38,7 @@ int _oecc06(char *buffer, int length);
 EXPORT
 int _oecc07(char *buffer, int *p_length, int security_level);
 
-/* */
+/* OpenSession */
 EXPORT
 int _oecc09(int *p_session_id, int security_level);
 
