@@ -119,8 +119,8 @@ $(TOOLCHAIN):
 
 $(EUREKA_SRC):
 	echo "Downloading Chromecast 'content shell' open source files ..."
-	wget --continue https://www.googledrive.com/host/0B3j4zj2IQp7MQkE3R2pzQ1c3Sk0/chromecast_v1.5_content_shell.tgz
-	tar zxf chromecast_v1.5_content_shell.tgz
+	wget --continue https://www.googledrive.com/host/0B3j4zj2IQp7Md2luZ0dFYUJhbnc/chromecast_v1.6_content_shell.tgz
+	tar zxf chromecast_v1.6_content_shell.tgz
 
 .tools: $(OUTDIR)/cert_provisioning
 
