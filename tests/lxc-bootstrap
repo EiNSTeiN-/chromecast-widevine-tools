@@ -104,6 +104,10 @@ chown -R 0:0 $LXC_ROOTFS/root/.ssh/
 chmod 644 $LXC_ROOTFS/root/.ssh
 chmod 644 $LXC_ROOTFS/root/.ssh/authorized_keys
 
+if [ "`cat $LXC_ROOTFS/root/.bashrc | grep LD_LIBRARY_PATH`" = "" ]; then
+  echo "export LD_LIBRARY_PATH=/root/tools:$LD_LIBRARY_PATH" >> $LXC_ROOTFS/root/.bashrc
+fi
+
 echo "Booting container ..."
 lxc-start -n $LXCNAME -d
 lxc-wait -n $LXCNAME --state=RUNNING -t 30

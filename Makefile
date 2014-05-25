@@ -1,9 +1,9 @@
 PREFIX ?= arm-unknown-linux-gnueabi
-LD=$(PREFIX)-ld
-CC=$(PREFIX)-gcc
-CXX=$(PREFIX)-g++
-AR="$(PREFIX)-ar r"
-RANLIB=$(PREFIX)-ranlib
+export LD=$(PREFIX)-ld
+export CC=$(PREFIX)-gcc
+export CXX=$(PREFIX)-g++
+export AR=$(PREFIX)-ar
+export RANLIB=$(PREFIX)-ranlib
 
 MOCKS ?= mocks
 TOOLS ?= tools
@@ -17,16 +17,17 @@ TOOLCHAIN_BIN := $(TOOLCHAIN)/arm-unknown-linux-gnueabi-4.5.3-glibc/bin
 
 PATH := $(TOOLCHAIN_BIN):$(PATH)
 
-EUREKA_SRC ?= chromium/src
+CHROMIUM ?= chromium
+EUREKA_SRC ?= $(CHROMIUM)/src
 EUREKA_RELEASE := $(EUREKA_SRC)/out_arm_eureka/Release
 
-INCLUDES=-I$(INCPATH)/wvcdm/ -I$(INCPATH)/wvcdm_sysdep/ -I$(EUREKA_SRC) \
+export INCLUDES=-I$(INCPATH)/wvcdm/ -I$(INCPATH)/wvcdm_sysdep/ -I$(EUREKA_SRC) \
 	-I$(PROTOBUF)/src \
 	-I$(TOOLCHAIN)/arm-unknown-linux-gnueabi-4.5.3-glibc/target-arm-unknown-linux-gnueabi/usr/include
-LIBPATH=-L$(EUREKA_RELEASE) -L$(MOCKS)/PEAgent -L$(OPENSSL) \
+export LIBPATH=-L$(EUREKA_RELEASE) -L$(MOCKS) -L$(OPENSSL) \
 	-L$(TOOLCHAIN)/arm-unknown-linux-gnueabi-4.5.3-glibc/target-arm-unknown-linux-gnueabi/usr/lib
 
-CFLAGS=-Wall -Wextra -DNDEBUG -DEUREKA -DPOSIX -DLINUX \
+export CFLAGS= -fPIC -Wall -Wextra -DNDEBUG -DEUREKA -DPOSIX -DLINUX \
 	-Wno-unused-parameter -Wno-missing-field-initializers
 
 CERT_PROVISIONING_LIBS=\
@@ -107,7 +108,7 @@ CERT_PROVISIONING_OBJS=\
 	$(EUREKA_SRC)/base/third_party/nspr/prtime.o \
 	$(TOOLS)/cert_provisioning.o
 
-.PHONY: all .tools .third_party clean tests
+.PHONY: all .tools .third_party clean tests $(MOCKS)
 
 all: $(EUREKA_SRC) $(TOOLCHAIN) .third_party .tools
 
@@ -136,9 +137,9 @@ $(OPENSSL):
 $(OPENSSL)/libssl.a: $(OPENSSL)
 	echo "Cross-compiling OpenSSL ..."
 	cd $(OPENSSL) && ./Configure linux-generic32 no-shared -DL_ENDIAN
-	make -C $(OPENSSL) CC=$(CC) AR=$(AR) RANLIB=$(RANLIB) LD=$(LD) MAKEDEPPROG=$(CC) PROCESSOR=ARM
+	make -C $(OPENSSL) PROCESSOR=ARM
 
-$(OUTDIR)/cert_provisioning: $(MOCKS)/PEAgent/libPEAgent.so $(CERT_PROVISIONING_OBJS)
+$(OUTDIR)/cert_provisioning: $(MOCKS) $(CERT_PROVISIONING_OBJS)
 	mkdir -p $(OUTDIR)
 	$(CXX) $(CFLAGS) $(INCLUDES) $(LIBPATH) \
 		-o $(OUTDIR)/cert_provisioning $(CERT_PROVISIONING_OBJS) $(CERT_PROVISIONING_LIBS)
@@ -152,14 +153,17 @@ $(OUTDIR)/cert_provisioning: $(MOCKS)/PEAgent/libPEAgent.so $(CERT_PROVISIONING_
 .cpp.o:
 	$(CXX) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
-$(MOCKS)/PEAgent/libPEAgent.so: $(MOCKS)/PEAgent/oecc.o
-	$(CC) $(CFLAGS) -fPIC -shared -Wl,-soname,libPEAgent.so -o \
-		$(MOCKS)/PEAgent/libPEAgent.so $(MOCKS)/PEAgent/oecc.o
-
 tests:
 	make -C tests
 
+$(MOCKS):
+	make -C $(MOCKS)
+	cp $(MOCKS)/*.so $(OUTDIR)
+
 clean:
-	rm -f $(MOCKS)/PEAgent/*.so $(MOCKS)/PEAgent/*.o
+	make -C $(MOCKS) clean
 	rm -f $(CERT_PROVISIONING_OBJS) $(OUTDIR)/cert_provisioning
 	make -C $(OPENSSL) clean
+
+cleandeps: clean
+	rm -rf $(CHROMIUM) $(THIRD_PARTY) $(TOOLCHAIN) $(OUTDIR) staging
