@@ -44,7 +44,6 @@ int main(int argc, char *argv[])
   const char *keystore_filename = NULL;
   unsigned int keystore_length = 0, keystore_length_ = 0;
   char *keystore = NULL;
-  unsigned int keystore_bits = 0;
   int i, type;
   unsigned int err;
 
