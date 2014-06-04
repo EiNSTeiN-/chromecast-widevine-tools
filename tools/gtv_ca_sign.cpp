@@ -42,8 +42,9 @@ int main(int argc, char *argv[])
 {
   struct OpenCrypto_Key *key = NULL;
   const char *keystore_filename = NULL;
-  unsigned int keystore_length = 0;
+  unsigned int keystore_length = 0, keystore_length_ = 0;
   char *keystore = NULL;
+  unsigned int keystore_bits = 0;
   int i, type;
   unsigned int err;
 
@@ -84,7 +85,13 @@ int main(int argc, char *argv[])
     return -1;
   }
 
-  if((err = gtv_ca_load_key_advance(&key, keystore+124, keystore_length-124, 4, 2)) != 0) {
+  keystore_length_ = *(unsigned int *)(keystore + 124);
+  keystore_length_ += 15;
+  keystore_length_ &= 0xFFFFFFF0;
+  keystore_length_ += 128;
+  printf("using keystore_bits=%u, should match filesize=%u\n", keystore_length_, keystore_length);
+
+  if((err = gtv_ca_load_key_advance(&key, keystore, keystore_length_, 4, 2)) != 0) {
     fprintf(stderr, "gtv_ca_load_key_advance: failed %u\n", err);
     return -1;
   }
