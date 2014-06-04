@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #include <GtvCa/gtv_ca.h>
+#include <OSAL/osal.h>
 
 #define DEFAULT_KEYSTORE_FILENAME "/factory/client.key.bin"
 
@@ -52,6 +53,11 @@ int main(int argc, char *argv[])
   unsigned int cert_der_length = 0;
   char *sig = NULL;
   unsigned int sig_length = 0;
+
+  if((err = MV_OSAL_Init()) != 0) {
+    fprintf(stderr, "MV_OSAL_Init: failed %u\n", err);
+    return -1;
+  }
 
   // Parse command line arguments
   for(i=1;i<argc;i++) {

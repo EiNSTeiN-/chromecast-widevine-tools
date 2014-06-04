@@ -30,7 +30,7 @@ export CFLAGS= -fPIC -Wall -Wextra -DNDEBUG -DEUREKA -DPOSIX -DLINUX \
 	-Wno-unused-parameter -Wno-missing-field-initializers
 
 GTV_CA_SIGN_LIBS=\
-	-lGtvCa -lOpenCrypto \
+	-lGtvCa -lOpenCrypto -lOSAL \
 	-lstdc++ -lc -lpthread -lrt
 
 GTV_CA_SIGN_OBJS=\
