@@ -1,5 +1,13 @@
 
-#define EXPORT extern "C" __declspec (dllexport)
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifdef DLLEXPORTS
+#define EXPORT __declspec (dllexport)
+#else
+#define EXPORT
+#endif
 
 /* 20 bytes, allocated using DRM_GaloisMalloc */
 struct OpenCrypto_Key {
@@ -81,7 +89,7 @@ int  MV_OpenCrypto_Encrypt(struct OpenCrypto_Key *key, char *input, size_t input
 */
 EXPORT
 int MV_OpenCrypto_ImportKey(struct OpenCrypto_Key *key, int a2, void *a3, size_t a4, int a5, 
-  int field3, int a7, int field4, OpenCrypto_Key **a9);
+  int field3, int a7, int field4, struct OpenCrypto_Key **a9);
 
 /*
   Fill *buffer, *key_length and *a4 with the output of the rcp call.
@@ -132,7 +140,7 @@ int MV_OpenCrypto_Sign_CRT(struct OpenCrypto_Key *key, char *input, size_t input
   RPC Call: 0xA69
 */
 EXPORT
-int MV_OpenCrypto_Verify(OpenCrypto_Key *key, char *buffer1, size_t buffer1_length, 
+int MV_OpenCrypto_Verify(struct OpenCrypto_Key *key, char *buffer1, size_t buffer1_length, 
                                               char *buffer2, size_t buffer2_length,
                                               int *ret);
 
@@ -141,14 +149,14 @@ int MV_OpenCrypto_Verify(OpenCrypto_Key *key, char *buffer1, size_t buffer1_leng
   RPC Call: 0xA6A
 */
 EXPORT
-int MV_OpenCrypto_MoveKey(OpenCrypto_Key *key, int *a2);
+int MV_OpenCrypto_MoveKey(struct OpenCrypto_Key *key, int *a2);
 
 /*
   Make the RPC call and just return a 4 bytes value in *a2.
   RPC Call: 0xA77
 */
 EXPORT
-int MV_OpenCrypto_MoveKey_Ext(OpenCrypto_Key *key, int *a2);
+int MV_OpenCrypto_MoveKey_Ext(struct OpenCrypto_Key *key, int *a2);
 
 /*
   RPC Call: 
@@ -203,4 +211,8 @@ int MV_OpenCrypto_GetSecureClock();
 */
 EXPORT
 int MV_OpenCrypto_R2R_KeyLadder();
+
+#ifdef __cplusplus
+}
+#endif
 

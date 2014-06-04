@@ -1,5 +1,13 @@
 
-#define EXPORT extern "C" __declspec (dllexport)
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifdef DLLEXPORTS
+#define EXPORT __declspec (dllexport)
+#else
+#define EXPORT
+#endif
 
 /*
   Initialize the crypto module
@@ -104,5 +112,7 @@ EXPORT
 int _oecc21(int session_id, char *a3, int a3_len, 
     char *mac_ctx, int mac_ctx_len, char *enc_ctx, int enc_ctx_len);
 
-};
+#ifdef __cplusplus
+}
+#endif
 
