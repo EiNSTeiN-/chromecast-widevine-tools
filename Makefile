@@ -5,10 +5,10 @@ export CXX=$(PREFIX)-g++
 export AR=$(PREFIX)-ar
 export RANLIB=$(PREFIX)-ranlib
 
-MOCKS ?= mocks
-TOOLS ?= tools
-INCPATH ?= includes
-THIRD_PARTY ?= third_party
+MOCKS ?= $(shell pwd)/mocks
+TOOLS ?= $(shell pwd)/tools
+INCPATH ?= $(shell pwd)/includes
+THIRD_PARTY ?= $(shell pwd)/third_party
 OPENSSL ?= $(THIRD_PARTY)/openssl
 PROTOBUF ?= $(THIRD_PARTY)/protobuf
 OUTDIR ?= bin
@@ -21,14 +21,22 @@ CHROMIUM ?= chromium
 EUREKA_SRC ?= $(CHROMIUM)/src
 EUREKA_RELEASE := $(EUREKA_SRC)/out_arm_eureka/Release
 
-export INCLUDES=-I$(INCPATH)/wvcdm/ -I$(INCPATH)/wvcdm_sysdep/ -I$(EUREKA_SRC) \
-	-I$(PROTOBUF)/src \
-	-I$(TOOLCHAIN)/arm-unknown-linux-gnueabi-4.5.3-glibc/target-arm-unknown-linux-gnueabi/usr/include
+export C_INCLUDE_PATH=$(MOCKS):$(INCPATH)/wvcdm/:$(INCPATH)/wvcdm_sysdep/:$(EUREKA_SRC): \
+	$(PROTOBUF)/src:$(MOCKS): \
+	$(TOOLCHAIN)/arm-unknown-linux-gnueabi-4.5.3-glibc/target-arm-unknown-linux-gnueabi/usr/include
+export CPLUS_INCLUDE_PATH=$(C_INCLUDE_PATH)
 export LIBPATH=-L$(EUREKA_RELEASE) -L$(MOCKS) -L$(OPENSSL) \
 	-L$(TOOLCHAIN)/arm-unknown-linux-gnueabi-4.5.3-glibc/target-arm-unknown-linux-gnueabi/usr/lib
 
 export CFLAGS= -fPIC -Wall -Wextra -DNDEBUG -DEUREKA -DPOSIX -DLINUX \
 	-Wno-unused-parameter -Wno-missing-field-initializers
+
+GTV_CA_SIGN_LIBS=\
+	-lGtvCa -lOpenCrypto \
+	-lstdc++ -lc -lpthread -lrt
+
+GTV_CA_SIGN_OBJS=\
+	$(TOOLS)/gtv_ca_sign.o
 
 CERT_PROVISIONING_LIBS=\
 	-lwvcdm -lwvcdm_sysdep -loec_eureka -lPEAgent \
@@ -122,7 +130,7 @@ $(EUREKA_SRC):
 	wget --continue https://www.googledrive.com/host/0B3j4zj2IQp7Md2luZ0dFYUJhbnc/chromecast_v1.6_content_shell.tgz
 	tar zxf chromecast_v1.6_content_shell.tgz
 
-.tools: $(OUTDIR)/cert_provisioning
+.tools: $(OUTDIR)/cert_provisioning $(OUTDIR)/gtv_ca_sign
 
 .third_party: $(PROTOBUF) $(OPENSSL)/libssl.a
 
@@ -141,17 +149,22 @@ $(OPENSSL)/libssl.a: $(OPENSSL)
 
 $(OUTDIR)/cert_provisioning: $(MOCKS) $(CERT_PROVISIONING_OBJS)
 	mkdir -p $(OUTDIR)
-	$(CXX) $(CFLAGS) $(INCLUDES) $(LIBPATH) \
+	$(CXX) $(CFLAGS) $(LIBPATH) \
 		-o $(OUTDIR)/cert_provisioning $(CERT_PROVISIONING_OBJS) $(CERT_PROVISIONING_LIBS)
 
+$(OUTDIR)/gtv_ca_sign: $(MOCKS) $(GTV_CA_SIGN_OBJS)
+	mkdir -p $(OUTDIR)
+	$(CXX) $(CFLAGS) $(LIBPATH) \
+		-o $(OUTDIR)/gtv_ca_sign $(GTV_CA_SIGN_OBJS) $(GTV_CA_SIGN_LIBS)
+
 .c.o:
-	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 .cc.o:
-	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 .cpp.o:
-	$(CXX) $(CFLAGS) $(INCLUDES) -c $< -o $@
+	$(CXX) $(CFLAGS) -c $< -o $@
 
 tests:
 	make -C tests
@@ -163,6 +176,7 @@ $(MOCKS):
 clean:
 	make -C $(MOCKS) clean
 	rm -f $(CERT_PROVISIONING_OBJS) $(OUTDIR)/cert_provisioning
+	rm -f $(GTV_CA_SIGN_OBJS) $(OUTDIR)/gtv_ca_sign
 	make -C $(OPENSSL) clean
 
 cleandeps: clean
