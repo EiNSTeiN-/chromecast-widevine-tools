@@ -21,9 +21,7 @@ CHROMIUM ?= chromium
 EUREKA_SRC ?= $(CHROMIUM)/src
 EUREKA_RELEASE := $(EUREKA_SRC)/out_arm_eureka/Release
 
-export C_INCLUDE_PATH=$(MOCKS):$(INCPATH)/wvcdm/:$(INCPATH)/wvcdm_sysdep/:$(EUREKA_SRC): \
-	$(PROTOBUF)/src:$(MOCKS): \
-	$(TOOLCHAIN)/arm-unknown-linux-gnueabi-4.5.3-glibc/target-arm-unknown-linux-gnueabi/usr/include
+export C_INCLUDE_PATH=$(INCPATH)/wvcdm/:$(INCPATH)/wvcdm_sysdep/:$(EUREKA_SRC):$(PROTOBUF)/src:$(MOCKS):$(TOOLCHAIN)/arm-unknown-linux-gnueabi-4.5.3-glibc/target-arm-unknown-linux-gnueabi/usr/include
 export CPLUS_INCLUDE_PATH=$(C_INCLUDE_PATH)
 export LIBPATH=-L$(EUREKA_RELEASE) -L$(MOCKS) -L$(OPENSSL) \
 	-L$(TOOLCHAIN)/arm-unknown-linux-gnueabi-4.5.3-glibc/target-arm-unknown-linux-gnueabi/usr/lib
